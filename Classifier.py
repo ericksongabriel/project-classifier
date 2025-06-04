@@ -1,10 +1,6 @@
 import streamlit as st
-import openai
 import pandas as pd
-import os
-
-# Use Streamlit Secrets for OpenAI key (configured in Streamlit Cloud)
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+import random
 
 st.set_page_config(page_title="Classificador de Projetos", layout="wide")
 st.title("🔎 Classificador de Projetos I&D por Domínio Prioritário")
@@ -18,8 +14,6 @@ if uploaded_file:
     try:
         projetos_df = xls.parse("Projetos")
         dominios_df = xls.parse("Dominios")
-        # Strip whitespace from column names here:
-        dominios_df.columns = dominios_df.columns.str.strip()
     except Exception as e:
         st.error(f"Erro ao ler as folhas 'Projetos' ou 'Dominios': {e}")
         st.stop()
@@ -35,7 +29,7 @@ if uploaded_file:
 
     for _, row in dominios_df.iterrows():
         domain = row["Dominios"]
-        description = str(row["Descrição"]).strip() if not pd.isna(row["Descrição"]) else ""
+        description = str(row["Descrição"]).strip() if pd.notna(row.get("Descrição")) else ""
 
         if pd.notna(domain) and domain.strip():
             # Save the previous domain if we have one
@@ -55,31 +49,10 @@ if uploaded_file:
         full_description = " ".join(current_description).strip()
         domain_options.append(f"{current_domain} - {full_description}")
 
+    # Mock classify_project function: randomly assign a domain for testing
     def classify_project(summary):
-        prompt = f"""
-        Atribua o seguinte projeto de I&D a um dos seguintes domínios prioritários com base no seu resumo.
-
-        Domínios disponíveis:
-        {chr(10).join(domain_options)}
-
-        Resumo do projeto:
-        """
-        prompt += f"""\n{summary}\n
-        Responda apenas com o nome do domínio mais adequado."""
-
-        try:
-            response = openai.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "És um classificador de projetos de I&D em Portugal."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0
-            )
-            return response.choices[0].message.content.strip()
-        except Exception as e:
-            return f"Erro: {e}"
-
+        possible_domains = [opt.split(" - ")[0] for opt in domain_options]
+        return random.choice(possible_domains)
 
     if st.button("🚀 Classificar Projetos"):
         results = []
