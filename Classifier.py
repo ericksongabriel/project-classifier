@@ -68,8 +68,8 @@ if uploaded_file:
         Responda apenas com o nome do domínio mais adequado."""
 
         try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4-turbo",
+            response = openai.chat.completions.create(
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "És um classificador de projetos de I&D em Portugal."},
                     {"role": "user", "content": prompt}
@@ -79,6 +79,7 @@ if uploaded_file:
             return response.choices[0].message.content.strip()
         except Exception as e:
             return f"Erro: {e}"
+
 
     if st.button("🚀 Classificar Projetos"):
         results = []
