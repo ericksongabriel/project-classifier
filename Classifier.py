@@ -1,13 +1,10 @@
-# streamlit_app.py
 import streamlit as st
 import openai
 import pandas as pd
 import os
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Use Streamlit Secrets for OpenAI key (configured in Streamlit Cloud)
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 st.set_page_config(page_title="Classificador de Projetos", layout="wide")
 st.title("🔎 Classificador de Projetos I&D por Domínio Prioritário")
@@ -29,10 +26,32 @@ if uploaded_file:
         st.error("A folha 'Projetos' precisa da coluna 'Sumario Executivo'.")
         st.stop()
 
-    # Prepare domains
+    # Prepare domains by grouping rows until an empty 'Dominios' value is found
     domain_options = []
+    current_domain = None
+    current_description = []
+
     for _, row in dominios_df.iterrows():
-        domain_options.append(f"{row['Domain']} - {row['Descrição']}")
+        domain = row["Dominios"]
+        description = str(row["Descrição"]).strip() if not pd.isna(row["Descrição"]) else ""
+
+        if pd.notna(domain) and domain.strip():
+            # Save the previous domain if we have one
+            if current_domain:
+                full_description = " ".join(current_description).strip()
+                domain_options.append(f"{current_domain} - {full_description}")
+            # Start new domain
+            current_domain = domain.strip()
+            current_description = [description] if description else []
+        else:
+            # Continuation of the current domain description
+            if description:
+                current_description.append(description)
+
+    # Save the last domain
+    if current_domain:
+        full_description = " ".join(current_description).strip()
+        domain_options.append(f"{current_domain} - {full_description}")
 
     def classify_project(summary):
         prompt = f"""
