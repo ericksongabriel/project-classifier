@@ -18,6 +18,8 @@ if uploaded_file:
     try:
         projetos_df = xls.parse("Projetos")
         dominios_df = xls.parse("Dominios")
+        # Strip whitespace from column names here:
+        dominios_df.columns = dominios_df.columns.str.strip()
     except Exception as e:
         st.error(f"Erro ao ler as folhas 'Projetos' ou 'Dominios': {e}")
         st.stop()
